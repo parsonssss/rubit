@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+
+require "getoptlong"
+require "bundler/setup"
+require "rubit"
+require "json"
+
+include Rubit::Utils::Logger
+Rubit::Utils::Logger.setup(level: :debug)
+
+opts = GetoptLong.new(
+    ["--currentblock",                   "-c",            GetoptLong::NO_ARGUMENT ],
+    ["--send",                           "-s",            GetoptLong::REQUIRED_ARGUMENT ],
+    ["--getbalance",                     "-b",            GetoptLong::REQUIRED_ARGUMENT ],
+)
+
+while a = opts.get
+    case a.first
+    when "--currentblock"
+        puts Rubit::BlockChain::RubitChain.instance.current_block_hash
+    when "--send"
+        arg_array = JSON.load(a.last)
+        if arg_array.length == 3
+            sender, receiver, amount = arg_array
+            transaction = Rubit::BlockChain::RubitChain.instance.create_transaction(sender,receiver,amount)
+            Rubit::BlockChain::RubitChain.instance.create_block_with_transactions([transaction])
+        else
+            error 'usage: rubitcli -s \'["sender","receiver",amount]\''
+        end
+    when "--getbalance"
+        account = a.last
+        puts Rubit::BlockChain::RubitChain.instance.get_balance(account)
+    end
+
+end
+
